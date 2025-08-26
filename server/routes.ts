@@ -131,7 +131,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch('/api/campaigns/:id/status', async (req, res) => {
     try {
-      const user = await getCurrentUser(req);
+  const user = req.user;
       if (!user) {
         return res.status(401).json({ message: "Unauthorized" });
       }
@@ -160,7 +160,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/ai/chat", async (req, res) => {
     try {
-      const user = await getCurrentUser(req);
+  const user = req.user;
       if (!user) {
         return res.status(401).json({ message: "Unauthorized" });
       }
@@ -214,7 +214,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI Insights endpoint
   app.get("/api/ai/insights", async (req, res) => {
     try {
-      const user = await getCurrentUser(req);
+  const user = req.user;
       if (!user) {
         return res.status(401).json({ message: "Unauthorized" });
       }
@@ -243,7 +243,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Google Ads integration endpoints
   app.get("/api/google-ads/accounts", async (req, res) => {
     try {
-      const user = await getCurrentUser(req);
+  const user = req.user;
       if (!user) {
         return res.status(401).json({ message: "Unauthorized" });
       }
@@ -258,7 +258,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/google-ads/campaigns/:accountId", async (req, res) => {
     try {
-      const user = await getCurrentUser(req);
+  const user = req.user;
       if (!user) {
         return res.status(401).json({ message: "Unauthorized" });
       }
@@ -276,7 +276,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Alerts endpoints
   app.get("/api/alerts", async (req, res) => {
     try {
-      const user = await getCurrentUser(req);
+  const user = req.user;
       if (!user) {
         return res.status(401).json({ message: "Unauthorized" });
       }
@@ -291,7 +291,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/alerts/:id/read", async (req, res) => {
     try {
-      const user = await getCurrentUser(req);
+  const user = req.user;
       if (!user) {
         return res.status(401).json({ message: "Unauthorized" });
       }
