@@ -24,6 +24,7 @@ export interface IStorage {
   getCampaign(id: string): Promise<Campaign | undefined>;
   createCampaign(campaign: InsertCampaign): Promise<Campaign>;
   updateCampaign(id: string, updates: Partial<Campaign>): Promise<Campaign | undefined>;
+  updateCampaignStatus(id: string, status: string): Promise<Campaign | undefined>;
   
   // Alerts
   getAlerts(userId: string): Promise<Alert[]>;
@@ -218,6 +219,15 @@ export class MemStorage implements IStorage {
     if (!campaign) return undefined;
     
     const updatedCampaign = { ...campaign, ...updates, lastUpdated: new Date() };
+    this.campaigns.set(id, updatedCampaign);
+    return updatedCampaign;
+  }
+
+  async updateCampaignStatus(id: string, status: string): Promise<Campaign | undefined> {
+    const campaign = this.campaigns.get(id);
+    if (!campaign) return undefined;
+    
+    const updatedCampaign = { ...campaign, status, lastUpdated: new Date() };
     this.campaigns.set(id, updatedCampaign);
     return updatedCampaign;
   }

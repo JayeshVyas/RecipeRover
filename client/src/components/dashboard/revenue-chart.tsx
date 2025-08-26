@@ -1,4 +1,4 @@
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -42,14 +42,21 @@ export function RevenueChart({ data }: RevenueChartProps) {
       <CardContent className="pt-6">
         <div className="h-72" data-testid="chart-revenue">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart 
+            <BarChart 
               data={data} 
-              margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+              margin={{ top: 20, right: 20, left: 20, bottom: 20 }}
             >
+              <defs>
+                <linearGradient id="revenueBarGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={1} />
+                  <stop offset="100%" stopColor="hsl(217, 91%, 60%)" stopOpacity={0.8} />
+                </linearGradient>
+              </defs>
               <CartesianGrid 
                 strokeDasharray="3 3" 
                 stroke="hsl(var(--border))" 
                 opacity={0.3}
+                vertical={false}
               />
               <XAxis 
                 dataKey="month" 
@@ -57,43 +64,39 @@ export function RevenueChart({ data }: RevenueChartProps) {
                 fontSize={12}
                 axisLine={false}
                 tickLine={false}
+                tick={{ fill: "hsl(var(--muted-foreground))" }}
               />
               <YAxis 
                 stroke="hsl(var(--muted-foreground))"
                 fontSize={12}
                 axisLine={false}
                 tickLine={false}
+                tick={{ fill: "hsl(var(--muted-foreground))" }}
                 tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
               />
-              <Line 
-                type="monotone" 
-                dataKey="revenue" 
-                stroke="url(#colorGradient)"
-                strokeWidth={4}
-                dot={{ 
-                  fill: "hsl(var(--primary))", 
-                  strokeWidth: 3, 
-                  stroke: "hsl(var(--background))",
-                  r: 7,
-                  filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.1))"
+              <Tooltip
+                content={({ active, payload, label }) => {
+                  if (active && payload && payload.length) {
+                    return (
+                      <div className="bg-card border border-border rounded-lg shadow-lg p-3">
+                        <p className="text-sm font-medium mb-1">{`${label} 2024`}</p>
+                        <p className="text-sm text-primary font-bold">
+                          {`Revenue: $${payload[0].value?.toLocaleString()}`}
+                        </p>
+                      </div>
+                    );
+                  }
+                  return null;
                 }}
-                activeDot={{ 
-                  r: 10, 
-                  fill: "hsl(var(--primary))",
-                  stroke: "hsl(var(--background))",
-                  strokeWidth: 3,
-                  filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.2))"
-                }}
-                animationDuration={2000}
-                animationEasing="ease-out"
               />
-              <defs>
-                <linearGradient id="colorGradient" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stopColor="hsl(var(--primary))" />
-                  <stop offset="100%" stopColor="hsl(217, 91%, 60%)" />
-                </linearGradient>
-              </defs>
-            </LineChart>
+              <Bar 
+                dataKey="revenue" 
+                fill="url(#revenueBarGradient)"
+                radius={[8, 8, 0, 0]}
+                animationDuration={1500}
+                animationBegin={200}
+              />
+            </BarChart>
           </ResponsiveContainer>
         </div>
         <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">

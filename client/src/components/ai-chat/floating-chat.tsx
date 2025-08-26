@@ -230,3 +230,5 @@ export function FloatingChat() {
     </>
   );
 }
+
+export default FloatingChat;

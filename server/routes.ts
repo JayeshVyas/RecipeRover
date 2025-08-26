@@ -91,6 +91,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Campaign Routes
+  app.get('/api/campaigns', async (req, res) => {
+    try {
+      const user = await getCurrentUser(req);
+      if (!user) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const campaigns = await storage.getCampaigns(user.id);
+      res.json(campaigns);
+    } catch (error) {
+      console.error('Error fetching campaigns:', error);
+      res.status(500).json({ message: 'Failed to fetch campaigns' });
+    }
+  });
+
+  const createCampaignSchema = z.object({
+    name: z.string().min(1, "Campaign name is required"),
+    platform: z.enum(['google-ads', 'meta', 'linkedin', 'tiktok']),
+    budget: z.number().min(0, "Budget must be non-negative"),
+    objective: z.string().min(1, "Objective is required"),
+    targetAudience: z.string().optional()
+  });
+
+  app.post('/api/campaigns', async (req, res) => {
+    try {
+      const user = await getCurrentUser(req);
+      if (!user) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const validatedData = createCampaignSchema.parse(req.body);
+      const campaignData = {
+        ...validatedData,
+        userId: user.id,
+        status: 'draft',
+        impressions: 0,
+        clicks: 0,
+        conversions: 0,
+        spend: '0',
+        revenue: '0',
+        roas: '0'
+      };
+      
+      const campaign = await storage.createCampaign(campaignData);
+      res.json(campaign);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid campaign data", errors: error.errors });
+      }
+      console.error('Error creating campaign:', error);
+      res.status(500).json({ message: 'Failed to create campaign' });
+    }
+  });
+
+  app.patch('/api/campaigns/:id/status', async (req, res) => {
+    try {
+      const user = await getCurrentUser(req);
+      if (!user) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const { id } = req.params;
+      const { status } = req.body;
+      
+      if (!['active', 'paused', 'draft'].includes(status)) {
+        return res.status(400).json({ message: 'Invalid status' });
+      }
+      
+      const campaign = await storage.updateCampaignStatus(id, status);
+      res.json(campaign);
+    } catch (error) {
+      console.error('Error updating campaign status:', error);
+      res.status(500).json({ message: 'Failed to update campaign status' });
+    }
+  });
+
   // AI Chat endpoint
   const aiChatSchema = z.object({
     query: z.string().min(1, "Query is required"),
