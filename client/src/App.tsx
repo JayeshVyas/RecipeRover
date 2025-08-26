@@ -1,3 +1,4 @@
+import LandingPage from "@/pages/landing";
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -16,10 +17,7 @@ function Router() {
   return (
     <AppLayout>
       <Switch>
-        <Route path="/" component={Dashboard} />
-        <Route path="/campaigns" component={CampaignsPage} />
-        <Route path="/analytics" component={AnalyticsPage} />
-        <Route path="/automations" component={AutomationsPage} />
+        <Route path="/" component={LandingPage} />
         <Route component={NotFound} />
       </Switch>
       <FloatingChat />
