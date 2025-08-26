@@ -1,13 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import { Header } from "@/components/layout/header";
 import { MetricsCards } from "@/components/dashboard/metrics-cards";
 import { RevenueChart } from "@/components/dashboard/revenue-chart";
 import { TopCampaigns } from "@/components/dashboard/top-campaigns";
 import { AlertsPanel } from "@/components/dashboard/alerts-panel";
 import { AiInsights } from "@/components/dashboard/ai-insights";
 import { RecentActivity } from "@/components/dashboard/recent-activity";
-import { FloatingChat } from "@/components/ai-chat/floating-chat";
 import { Button } from "@/components/ui/button";
 import { Download, Plus } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,22 +18,19 @@ export default function Dashboard() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-        <Header />
-        <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center py-12">
-            <h2 className="text-2xl font-bold text-destructive mb-2">Error Loading Dashboard</h2>
-            <p className="text-muted-foreground">
-              {error instanceof Error ? error.message : "An unexpected error occurred"}
-            </p>
-          </div>
-        </main>
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="text-center py-12">
+          <h2 className="text-2xl font-bold text-destructive mb-2">Error Loading Dashboard</h2>
+          <p className="text-muted-foreground">
+            {error instanceof Error ? error.message : "An unexpected error occurred"}
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 relative">
+    <div className="relative">
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl animate-pulse-soft"></div>
@@ -43,9 +38,7 @@ export default function Dashboard() {
         <div className="absolute bottom-1/4 left-1/3 w-64 h-64 bg-purple-500/5 rounded-full blur-3xl animate-pulse-soft" style={{ animationDelay: '2s' }}></div>
       </div>
       
-      <Header />
-      
-      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 relative">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 relative">
         {/* Welcome Section */}
         <div className="mb-8 animate-slide-up">
           <div className="flex items-center justify-between mb-6">
@@ -179,10 +172,8 @@ export default function Dashboard() {
             <RecentActivity activities={dashboardData.recentActivity} />
           )
         )}
-      </main>
+      </div>
 
-      {/* Floating Chat Bot */}
-      <FloatingChat />
     </div>
   );
 }

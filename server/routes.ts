@@ -3,27 +3,17 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { processMarketingQuery, generateMarketingInsights } from "./services/openai";
 import { googleAdsService } from "./services/google-ads";
+import { authMiddleware, errorHandler, type AuthenticatedRequest } from "./middleware/auth";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Auth middleware (simplified - in production use proper session management)
-  const getCurrentUser = async (req: any) => {
-    // For demo purposes, return the first user
-    const users = await storage.getUser("123"); // This would come from session
-    if (!users) {
-      const allUsers = Array.from((storage as any).users.values());
-      return allUsers[0] || null;
-    }
-    return users;
-  };
+  // Apply auth middleware to all API routes
+  app.use('/api', authMiddleware);
 
   // Dashboard data endpoint
-  app.get("/api/dashboard", async (req, res) => {
+  app.get("/api/dashboard", async (req: AuthenticatedRequest, res) => {
     try {
-      const user = await getCurrentUser(req);
-      if (!user) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
+      const user = req.user;
 
       const [campaigns, alerts, aiInteractions] = await Promise.all([
         storage.getCampaigns(user.id),
@@ -92,12 +82,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Campaign Routes
-  app.get('/api/campaigns', async (req, res) => {
+  app.get('/api/campaigns', async (req: AuthenticatedRequest, res) => {
     try {
-      const user = await getCurrentUser(req);
-      if (!user) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
+      const user = req.user;
       const campaigns = await storage.getCampaigns(user.id);
       res.json(campaigns);
     } catch (error) {
@@ -114,12 +101,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     targetAudience: z.string().optional()
   });
 
-  app.post('/api/campaigns', async (req, res) => {
+  app.post('/api/campaigns', async (req: AuthenticatedRequest, res) => {
     try {
-      const user = await getCurrentUser(req);
-      if (!user) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
+      const user = req.user;
       
       const validatedData = createCampaignSchema.parse(req.body);
       const campaignData = {
@@ -325,6 +309,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to mark alert as read" });
     }
   });
+
+  // Add error handling middleware at the end
+  app.use(errorHandler);
 
   const httpServer = createServer(app);
   return httpServer;

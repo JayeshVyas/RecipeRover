@@ -30,8 +30,9 @@ const hourlyData = [
 ];
 
 export default function AnalyticsPage() {
-  const { data: campaigns } = useQuery({
+  const { data: campaigns = [] } = useQuery({
     queryKey: ['/api/campaigns'],
+    queryFn: () => fetch('/api/campaigns').then(res => res.json()),
   });
 
   const totalImpressions = performanceData.reduce((sum, item) => sum + item.impressions, 0);
@@ -44,8 +45,7 @@ export default function AnalyticsPage() {
   const avgRoas = (totalRevenue / (totalRevenue * 0.3)).toFixed(1); // Assuming 30% ad spend
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-      <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">
@@ -295,6 +295,5 @@ export default function AnalyticsPage() {
           </Card>
         </div>
       </div>
-    </div>
   );
 }
