@@ -1,0 +1,79 @@
+
+
+You are an expert full-stack architect and developer. 
+Help me design and generate code for a platform similar to Marble AI (gomarble.ai) but for the Marketing industry.
+
+# Goal:
+Build a "Marketing Insights & Automation Platform" where users can connect their ad accounts (Google Ads, Meta, LinkedIn, TikTok, GA4, etc.), 
+ask questions via AI assistant (Claude/ChatGPT), or use a frontend dashboard to view reports, and set up alerts/automations.
+
+# Core Requirements:
+1. **AI Assistant Integration**
+   - Connects with OpenAI/Anthropic (Claude/ChatGPT).
+   - Users can ask questions like: 
+     "What was my Google Ads ROI last month?" or 
+     "Compare Meta Ads vs LinkedIn leads in last 30 days".
+   - AI routes the query through an MCP client to the appropriate MCP server.
+
+2. **MCP (Model Context Protocol) Setup**
+   - Implement an MCP Client that bridges AI assistant + frontend with multiple MCP Servers.
+   - Each **MCP Server** integrates with a specific ad API (Google Ads, Meta Ads, LinkedIn, TikTok, GA4).
+   - Each server should expose a standard interface like:
+     - `getCampaignPerformance(accountId, dateRange)`
+     - `getROI(accountId, dateRange)`
+     - `getLeads(accountId, dateRange)`
+
+3. **Frontend (Web/Mobile)**
+   - Build a dashboard where users can:
+     - Authenticate & connect their ad accounts (OAuth2).
+     - View performance reports, charts, and KPIs.
+     - Download CSV/Excel reports.
+     - Manage alerts & automations.
+   - Suggested stack: **Next.js + React + TailwindCSS**.
+
+4. **Backend**
+   - Core API layer for authentication, data aggregation, and serving frontend requests.
+   - Suggested stack: **Node.js (Express/NestJS)** or **Python (FastAPI/Django)**.
+   - Secure storage of user tokens/credentials.
+   - Handle role-based access control (Admin, Analyst, Viewer).
+
+5. **Database**
+   - Use **PostgreSQL** for user accounts, connected accounts, reports, and alerts.
+   - Use **Redis** for caching ad API results to reduce quota usage.
+
+6. **Alerts & Automation**
+   - Allow users to set rules like:
+     - "If Google Ads CPC > $5, send Slack alert."
+     - "If Meta Ads spend exceeds $500/day, email me."
+   - Implement **event-driven jobs** with **Celery (Python)** or **BullMQ (Node.js)**.
+
+7. **APIs & Integrations**
+   - Google Ads API
+   - Meta Marketing API
+   - LinkedIn Ads API
+   - TikTok Ads API
+   - Google Analytics 4 API
+   - Slack / Email (SendGrid/SES) for notifications
+
+8. **Security**
+   - OAuth2.0 for external account integrations.
+   - JWT-based authentication for users.
+   - Encrypt tokens before storing in DB.
+
+# Deliverables:
+- Project structure with backend, frontend, and MCP client/server setup.
+- Example implementation of **one MCP server** (e.g., Google Ads).
+- Sample AI integration where user asks a question → routed via MCP → ad API → returns formatted insight.
+- Boilerplate code for alerts & automation system.
+
+# Tech Stack:
+- Frontend: Next.js + React + TailwindCSS
+- Backend: Node.js (NestJS/Express) OR Python (FastAPI)
+- Database: PostgreSQL + Redis
+- Worker Queue: BullMQ (Node) OR Celery (Python)
+- AI Integration: OpenAI API / Anthropic API
+- Deployment: Docker + Kubernetes (optional)
+
+
+---
+
