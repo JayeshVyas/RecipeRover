@@ -16,6 +16,43 @@ export default function CampaignsPage() {
   const createCampaign = useCreateCampaign();
   const updateCampaignStatus = useUpdateCampaignStatus();
 
+  // Hardcoded sample campaigns for demo
+  const sampleCampaigns = [
+    {
+      id: '1',
+      name: 'Summer Sale 2025',
+      platform: 'google-ads',
+      budget: 5000,
+      spend: 3200,
+      impressions: 120000,
+      clicks: 4500,
+      roas: 3.2,
+      status: 'active',
+    },
+    {
+      id: '2',
+      name: 'Back to School Meta',
+      platform: 'meta',
+      budget: 3000,
+      spend: 2100,
+      impressions: 80000,
+      clicks: 3200,
+      roas: 2.7,
+      status: 'paused',
+    },
+    {
+      id: '3',
+      name: 'LinkedIn B2B Outreach',
+      platform: 'linkedin',
+      budget: 4000,
+      spend: 1500,
+      impressions: 40000,
+      clicks: 1200,
+      roas: 1.8,
+      status: 'draft',
+    },
+  ];
+
   const campaignFields = [
     { name: 'name', label: 'Campaign Name', type: 'text' as const, required: true, placeholder: 'Enter campaign name' },
     { 
@@ -47,6 +84,8 @@ export default function CampaignsPage() {
     return <LoadingState type="cards" count={6} />;
   }
 
+  const campaignsToShow = campaigns && campaigns.length > 0 ? campaigns : sampleCampaigns;
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-8">
@@ -56,7 +95,6 @@ export default function CampaignsPage() {
           </h1>
           <p className="text-muted-foreground mt-1">Manage your marketing campaigns across all platforms</p>
         </div>
-        
         <CreateItemDialog
           title="Create New Campaign"
           fields={campaignFields}
@@ -77,7 +115,7 @@ export default function CampaignsPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {campaigns?.map((campaign: any, index: number) => (
+        {campaignsToShow?.map((campaign: any, index: number) => (
           <Card key={campaign.id} className="hover:shadow-lg transition-shadow">
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between">
