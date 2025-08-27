@@ -30,8 +30,16 @@ export default function BookCallModal({ onClose }: { onClose: () => void }) {
     }, 1200);
   };
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-card rounded-xl shadow-2xl w-full max-w-3xl relative text-card-foreground p-0">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      onClick={onClose}
+      style={{ cursor: 'pointer' }}
+    >
+      <div
+        className="bg-card rounded-xl shadow-2xl w-full max-w-3xl relative text-card-foreground p-0"
+        onClick={e => e.stopPropagation()}
+        style={{ cursor: 'default' }}
+      >
         <button className="absolute top-4 right-4 text-muted-foreground hover:text-primary transition" onClick={onClose} aria-label="Close">✕</button>
         <div className="flex flex-col md:flex-row gap-0 md:gap-8">
           {/* Left: Form */}
@@ -82,10 +90,10 @@ export default function BookCallModal({ onClose }: { onClose: () => void }) {
               <div className="mb-2 flex gap-2 items-center">
                 <span className="text-xs font-bold tracking-wide">BARRISTER AND MANN</span>
                 <span className="text-xs">×</span>
-                <span className="text-xs font-bold tracking-wide">GoMarble</span>
+                <span className="text-xs font-bold tracking-wide">Accelaro</span>
               </div>
               <div className="text-base mt-2 text-card-foreground">
-                “I’m incredibly pleased with the results. I’ve worked with multiple agencies, but only GoMarble has delivered profitable outcomes for Barrister and Mann, and they did it at a fraction of the cost!”
+                “I’m incredibly pleased with the results. I’ve worked with multiple agencies, but only Accelaro has delivered profitable outcomes for Barrister and Mann, and they did it at a fraction of the cost!”
               </div>
             </div>
           </div>

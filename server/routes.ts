@@ -1,3 +1,39 @@
+
+import { Router } from 'express';
+import { db } from './storage';
+import { users } from '../shared/schema';
+import bcrypt from 'bcryptjs';
+
+
+const router = Router();
+
+// Register
+router.post('/api/register', async (req, res) => {
+  const { name, email, password } = req.body;
+  if (!name || !email || !password) return res.status(400).json({ error: 'Missing fields' });
+  const hashed = await bcrypt.hash(password, 10);
+  try {
+    const [user] = await db.insert(users).values({ name, email, password: hashed }).returning();
+    res.json({ id: user.id, name: user.name, email: user.email });
+  } catch (e) {
+    res.status(400).json({ error: 'Email already exists' });
+  }
+});
+
+// Login
+router.post('/api/login', async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) return res.status(400).json({ error: 'Missing fields' });
+  const usersResult = await db.select().from(users).where(users.email.eq(email));
+  const user = usersResult[0];
+  if (!user) return res.status(401).json({ error: 'Invalid credentials' });
+  const valid = await bcrypt.compare(password, user.password);
+  if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
+  // TODO: Set session/cookie here
+  res.json({ id: user.id, name: user.name, email: user.email });
+});
+
+export default router;
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";

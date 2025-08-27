@@ -6,13 +6,14 @@ import BookCallModal from "@/components/common/book-call-modal";
 export default function LandingPage() {
   const [showAuth, setShowAuth] = useState(false);
   const [showBookCall, setShowBookCall] = useState(false);
+  const isModalOpen = showBookCall;
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
+    <div className={`min-h-screen bg-background text-foreground flex flex-col relative ${isModalOpen ? 'overflow-hidden' : ''}`}> 
       {/* Hero Section */}
       <section className="flex flex-col items-center justify-center py-20 px-4">
         <h1 className="text-5xl font-extrabold text-center mb-6 text-primary">AI-Assisted Marketing Automation</h1>
         <p className="text-xl text-center max-w-2xl mb-8 text-muted-foreground">
-          Scale your brand with RecipeRover. Connect your ad accounts, automate insights, and optimize campaigns with AI-powered tools and expert guidance.
+          Scale your brand with Accelaro. Connect your ad accounts, automate insights, and optimize campaigns with AI-powered tools and expert guidance.
         </p>
   <Button className="text-lg px-8 py-4 rounded-full bg-primary text-primary-foreground shadow-lg" onClick={() => setShowAuth(true)}>Get Started</Button>
         <div className="mt-8 flex flex-wrap gap-8 justify-center">
@@ -37,7 +38,7 @@ export default function LandingPage() {
 
       {/* Features/Process Section */}
       <section className="py-16 px-4 bg-card border-t border-border">
-        <h2 className="text-3xl font-bold text-center mb-10">How RecipeRover Delivers Growth</h2>
+  <h2 className="text-3xl font-bold text-center mb-10">How Accelaro Delivers Growth</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
           <div className="p-6 rounded-xl shadow bg-background">
             <h3 className="text-xl font-semibold mb-2 text-primary">One-Click Account Audit</h3>
@@ -63,7 +64,7 @@ export default function LandingPage() {
         <h2 className="text-3xl font-bold text-center mb-10">What Our Customers Say</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
           <div className="p-6 rounded-xl shadow bg-card">
-            <p className="text-lg mb-4">“RecipeRover helped us cut ad costs and grow sales faster than any other platform. The AI insights are a game changer!”</p>
+            <p className="text-lg mb-4">“Accelaro helped us cut ad costs and grow sales faster than any other platform. The AI insights are a game changer!”</p>
             <div className="font-semibold text-primary">Jane Doe, CMO</div>
           </div>
           <div className="p-6 rounded-xl shadow bg-card">
@@ -76,19 +77,24 @@ export default function LandingPage() {
   {/* Footer */}
   {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
       <footer className="py-8 px-4 bg-card border-t border-border text-center text-muted-foreground">
+        <div className="text-lg font-semibold mb-6">Ready to unlock your next growth lever?</div>
+        <Button className="mb-8 px-8 py-3 rounded-full bg-primary text-primary-foreground shadow-lg" onClick={() => setShowBookCall(true)}>Book a Call</Button>
         <div className="mb-2 font-bold text-primary text-xl">Accelaro</div>
         <div className="mb-2">AI-Assisted Marketing Automation Platform</div>
-        <div className="flex flex-wrap gap-4 justify-center mb-2">
+        <div className="flex flex-wrap gap-4 justify-center mb-6 mt-8">
           <a href="#" className="hover:underline">About</a>
           <a href="#" className="hover:underline">Blog</a>
           <a href="#" className="hover:underline">Contact</a>
           <a href="#" className="hover:underline">Privacy Policy</a>
         </div>
-        <div className="mt-8 text-lg font-semibold">Ready to unlock your next growth lever?</div>
-        <Button className="mt-4 px-8 py-3 rounded-full bg-primary text-primary-foreground shadow-lg" onClick={() => setShowBookCall(true)}>Book a Call</Button>
-        <div className="text-xs mt-8">&copy; {new Date().getFullYear()} Accelaro. All rights reserved.</div>
+        <div className="text-xs">&copy; {new Date().getFullYear()} Accelaro. All rights reserved.</div>
       </footer>
-      {showBookCall && <BookCallModal onClose={() => setShowBookCall(false)} />}
+      {showBookCall && (
+        <>
+          <div className="fixed inset-0 z-40 bg-white/30 backdrop-blur-md transition-all" />
+          <BookCallModal onClose={() => setShowBookCall(false)} />
+        </>
+      )}
     </div>
   );
 }
