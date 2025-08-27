@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/contexts/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
@@ -8,6 +8,10 @@ import { Facebook, Globe } from "lucide-react";
 
 export default function AuthModal({ onClose }: { onClose: () => void }) {
   const [mode, setMode] = useState<'choose' | 'register' | 'login'>('choose');
+  const { login, register } = useAuth();
+  const [, navigate] = useLocation();
+  
+  // Register form state
   const [registerForm, setRegisterForm] = useState({
     firstName: '',
     lastName: '',
@@ -18,11 +22,23 @@ export default function AuthModal({ onClose }: { onClose: () => void }) {
   });
   const [registerError, setRegisterError] = useState<string | null>(null);
   const [registerLoading, setRegisterLoading] = useState(false);
-  const [, navigate] = useLocation();
+  
+  // Login form state
+  const [loginForm, setLoginForm] = useState({
+    email: '',
+    password: '',
+  });
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [loginLoading, setLoginLoading] = useState(false);
 
   const handleRegisterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setRegisterForm({ ...registerForm, [name]: value });
+  };
+
+  const handleLoginChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setLoginForm({ ...loginForm, [name]: value });
   };
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -34,19 +50,33 @@ export default function AuthModal({ onClose }: { onClose: () => void }) {
     }
     setRegisterLoading(true);
     try {
-      await apiRequest("POST", "/api/register", {
+      await register({
         firstName: registerForm.firstName,
         lastName: registerForm.lastName,
         email: registerForm.email,
         password: registerForm.password,
       });
-      // Optionally, auto-login here or redirect
       onClose();
       navigate('/dashboard');
     } catch (err: any) {
       setRegisterError(err.message || 'Registration failed');
     } finally {
       setRegisterLoading(false);
+    }
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginError(null);
+    setLoginLoading(true);
+    try {
+      await login(loginForm.email, loginForm.password);
+      onClose();
+      navigate('/dashboard');
+    } catch (err: any) {
+      setLoginError(err.message || 'Login failed');
+    } finally {
+      setLoginLoading(false);
     }
   };
 
@@ -87,16 +117,33 @@ export default function AuthModal({ onClose }: { onClose: () => void }) {
           </form>
         )}
         {mode === 'login' && (
-          <form className="space-y-4">
+          <form className="space-y-4" onSubmit={handleLogin}>
             <h2 className="text-2xl font-bold mb-4 text-center">Login</h2>
-            <Input placeholder="Username or Email" type="text" required />
-            <Input placeholder="Password" type="password" required />
-            <Button className="w-full" type="submit">Login</Button>
+            <Input 
+              name="email" 
+              placeholder="Email" 
+              type="email" 
+              required 
+              value={loginForm.email} 
+              onChange={handleLoginChange} 
+            />
+            <Input 
+              name="password" 
+              placeholder="Password" 
+              type="password" 
+              required 
+              value={loginForm.password} 
+              onChange={handleLoginChange} 
+            />
+            {loginError && <div className="text-red-500 text-sm text-center">{loginError}</div>}
+            <Button className="w-full" type="submit" disabled={loginLoading}>
+              {loginLoading ? 'Logging in...' : 'Login'}
+            </Button>
             <Separator className="my-4" />
-            <Button variant="outline" className="w-full flex items-center gap-2">
+            <Button variant="outline" className="w-full flex items-center gap-2" type="button">
               <Globe className="h-4 w-4" /> Login with Google
             </Button>
-            <Button variant="outline" className="w-full flex items-center gap-2">
+            <Button variant="outline" className="w-full flex items-center gap-2" type="button">
               <Facebook className="h-4 w-4" /> Login with Meta
             </Button>
             <div className="text-center mt-4">

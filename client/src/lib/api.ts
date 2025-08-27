@@ -57,6 +57,13 @@ export interface AiInsight {
 }
 
 export const api = {
+  auth: {
+    logout: async (): Promise<{ message: string }> => {
+      const res = await apiRequest("POST", "/api/logout");
+      return res.json();
+    },
+  },
+  
   dashboard: {
     get: async (): Promise<DashboardData> => {
       const res = await apiRequest("GET", "/api/dashboard");

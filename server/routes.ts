@@ -45,6 +45,12 @@ router.post('/api/login', async (req, res) => {
   res.json({ id: user.id, firstName: user.firstName, lastName: user.lastName, email: user.email });
 });
 
+// Logout
+router.post('/api/logout', (req, res) => {
+  res.clearCookie('token');
+  res.json({ message: 'Logged out successfully' });
+});
+
 import { storage } from "./storage";
 import { processMarketingQuery, generateMarketingInsights } from "./services/openai";
 import { googleAdsService } from "./services/google-ads";
