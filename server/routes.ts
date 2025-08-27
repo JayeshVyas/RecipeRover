@@ -2,52 +2,129 @@
 import { Router } from 'express';
 import { db } from './storage';
 import { users } from '../shared/schema';
+import jwt from 'jsonwebtoken';
+import { sql } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
+import { authMiddleware, errorHandler, AuthenticatedRequest } from './middleware/auth';
+const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_key';
 
 
 const router = Router();
 
 // Register
 router.post('/api/register', async (req, res) => {
-  const { name, email, password } = req.body;
-  if (!name || !email || !password) return res.status(400).json({ error: 'Missing fields' });
-  const hashed = await bcrypt.hash(password, 10);
-  try {
-    const [user] = await db.insert(users).values({ name, email, password: hashed }).returning();
-    res.json({ id: user.id, name: user.name, email: user.email });
-  } catch (e) {
-    res.status(400).json({ error: 'Email already exists' });
+  const { firstName, lastName, email, password } = req.body;
+  if (!firstName || !lastName || !email || !password) return res.status(400).json({ error: 'Missing fields' });
+  // Check if email already exists
+  const existing = await db.select().from(users).where(sql`${users.email} = ${email}`);
+  if (existing.length > 0) {
+    return res.status(400).json({ error: 'Email already exists' });
   }
+  const hashed = await bcrypt.hash(password, 10);
+  const username = email.split('@')[0];
+  const [user] = await db.insert(users).values({ firstName, lastName, email, password: hashed, username, role: 'user', createdAt: new Date() }).returning();
+  // Create JWT token
+  const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
+  res.cookie('token', token, { httpOnly: true });
+  res.json({ id: user.id, firstName: user.firstName, lastName: user.lastName, email: user.email });
 });
 
 // Login
 router.post('/api/login', async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) return res.status(400).json({ error: 'Missing fields' });
-  const usersResult = await db.select().from(users).where(users.email.eq(email));
+  const usersResult = await db.select().from(users).where(sql`${users.email} = ${email}`);
   const user = usersResult[0];
   if (!user) return res.status(401).json({ error: 'Invalid credentials' });
   const valid = await bcrypt.compare(password, user.password);
   if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
   // TODO: Set session/cookie here
-  res.json({ id: user.id, name: user.name, email: user.email });
+  // Create JWT token
+  const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
+  res.cookie('token', token, { httpOnly: true });
+  res.json({ id: user.id, firstName: user.firstName, lastName: user.lastName, email: user.email });
 });
 
-export default router;
-import type { Express } from "express";
-import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { processMarketingQuery, generateMarketingInsights } from "./services/openai";
 import { googleAdsService } from "./services/google-ads";
-import { authMiddleware, errorHandler, type AuthenticatedRequest } from "./middleware/auth";
 import { z } from "zod";
 
-export async function registerRoutes(app: Express): Promise<Server> {
-  // Apply auth middleware to all API routes
-  app.use('/api', authMiddleware);
+// Dashboard data endpoint
+router.get("/api/dashboard", authMiddleware, async (req: AuthenticatedRequest, res) => {
+  try {
+    const user = req.user;
+    if (!user) return res.status(401).json({ message: "Unauthorized" });
+
+    const [campaigns, alerts, aiInteractions] = await Promise.all([
+      storage.getCampaigns(user.id),
+      storage.getUnreadAlerts(user.id),
+      storage.getAiInteractions(user.id, 5)
+    ]);
+
+    // Calculate aggregate metrics
+    const totalRevenue = campaigns.reduce((sum, c) => sum + parseFloat(c.revenue || "0"), 0);
+    const totalSpend = campaigns.reduce((sum, c) => sum + parseFloat(c.spend || "0"), 0);
+    const totalClicks = campaigns.reduce((sum, c) => sum + (c.clicks || 0), 0);
+    const totalConversions = campaigns.reduce((sum, c) => sum + (c.conversions || 0), 0);
+    const averageRoas = totalSpend > 0 ? totalRevenue / totalSpend : 0;
+    const averageCtr = campaigns.length > 0 
+      ? campaigns.reduce((sum, c) => sum + parseFloat(c.ctr || "0"), 0) / campaigns.length 
+      : 0;
+
+    // Generate revenue chart data (last 6 months)
+    const revenueChartData = Array.from({ length: 6 }, (_, i) => {
+      const date = new Date();
+      date.setMonth(date.getMonth() - (5 - i));
+      const monthRevenue = totalRevenue * (0.7 + Math.random() * 0.6); // Simulate historical data
+      return {
+        month: date.toLocaleString('default', { month: 'short' }),
+        revenue: Math.round(monthRevenue)
+      };
+    });
+
+    res.json({
+      user: {
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email
+      },
+      metrics: {
+        totalRevenue,
+        totalSpend,
+        averageRoas,
+        averageCtr,
+        totalLeads: totalConversions,
+        growthRate: 12.5 // Simulated
+      },
+      campaigns: campaigns.map(c => ({
+        id: c.id,
+        name: c.name,
+        platform: c.platform,
+        spend: parseFloat(c.spend || "0"),
+        revenue: parseFloat(c.revenue || "0"),
+        roas: parseFloat(c.roas || "0"),
+        status: c.status
+      })),
+      alerts: alerts.slice(0, 5),
+      revenueChartData,
+      recentActivity: campaigns.slice(0, 3).map(c => ({
+        id: c.id,
+        type: "campaign_update",
+        message: `Campaign "${c.name}" performance updated`,
+        platform: c.platform,
+        timestamp: c.lastUpdated
+      }))
+    });
+  } catch (error) {
+    console.error("Dashboard error:", error);
+    res.status(500).json({ message: "Failed to fetch dashboard data" });
+  }
+});
 
   // Dashboard data endpoint
-  app.get("/api/dashboard", async (req: AuthenticatedRequest, res) => {
+  router.get("/api/dashboard", authMiddleware, async (req: AuthenticatedRequest, res) => {
+    // Dashboard data endpoint
     try {
       const user = req.user;
 
@@ -118,7 +195,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Campaign Routes
-  app.get('/api/campaigns', async (req: AuthenticatedRequest, res) => {
+  router.get('/api/campaigns', authMiddleware, async (req: AuthenticatedRequest, res) => {
     try {
       const user = req.user;
       const campaigns = await storage.getCampaigns(user.id);
@@ -137,14 +214,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     targetAudience: z.string().optional()
   });
 
-  app.post('/api/campaigns', async (req: AuthenticatedRequest, res) => {
+  router.post('/api/campaigns', authMiddleware, async (req: AuthenticatedRequest, res) => {
     try {
       const user = req.user;
       
       const validatedData = createCampaignSchema.parse(req.body);
       const campaignData = {
         ...validatedData,
+        budget: String(validatedData.budget),
         userId: user.id,
+        accountId: 'demo',
+        campaignId: 'demo-' + Date.now(),
         status: 'draft',
         impressions: 0,
         clicks: 0,
@@ -153,7 +233,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         revenue: '0',
         roas: '0'
       };
-      
       const campaign = await storage.createCampaign(campaignData);
       res.json(campaign);
     } catch (error) {
@@ -165,7 +244,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch('/api/campaigns/:id/status', async (req, res) => {
+  router.patch('/api/campaigns/:id/status', authMiddleware, async (req: AuthenticatedRequest, res) => {
     try {
   const user = req.user;
       if (!user) {
@@ -194,7 +273,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }).optional()
   });
 
-  app.post("/api/ai/chat", async (req, res) => {
+  router.post("/api/ai/chat", authMiddleware, async (req: AuthenticatedRequest, res) => {
     try {
   const user = req.user;
       if (!user) {
@@ -248,7 +327,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // AI Insights endpoint
-  app.get("/api/ai/insights", async (req, res) => {
+  router.get("/api/ai/insights", authMiddleware, async (req: AuthenticatedRequest, res) => {
     try {
   const user = req.user;
       if (!user) {
@@ -277,7 +356,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Google Ads integration endpoints
-  app.get("/api/google-ads/accounts", async (req, res) => {
+  router.get("/api/google-ads/accounts", authMiddleware, async (req: AuthenticatedRequest, res) => {
     try {
   const user = req.user;
       if (!user) {
@@ -292,7 +371,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/google-ads/campaigns/:accountId", async (req, res) => {
+  router.get("/api/google-ads/campaigns/:accountId", authMiddleware, async (req: AuthenticatedRequest, res) => {
     try {
   const user = req.user;
       if (!user) {
@@ -310,7 +389,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Alerts endpoints
-  app.get("/api/alerts", async (req, res) => {
+  router.get("/api/alerts", authMiddleware, async (req: AuthenticatedRequest, res) => {
     try {
   const user = req.user;
       if (!user) {
@@ -325,7 +404,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/alerts/:id/read", async (req, res) => {
+  router.patch("/api/alerts/:id/read", authMiddleware, async (req: AuthenticatedRequest, res) => {
     try {
   const user = req.user;
       if (!user) {
@@ -347,8 +426,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Add error handling middleware at the end
-  app.use(errorHandler);
+  router.use(errorHandler);
 
-  const httpServer = createServer(app);
-  return httpServer;
-}
+// Export router for use in server entry
+export default router;

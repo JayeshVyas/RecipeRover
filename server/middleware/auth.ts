@@ -1,29 +1,23 @@
 import type { Request, Response, NextFunction } from "express";
 import { storage } from "../storage";
+import jwt from 'jsonwebtoken';
 
 export interface AuthenticatedRequest extends Request {
   user?: any;
 }
 
 export async function authMiddleware(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+  const token = req.cookies?.token;
+  if (!token) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_key';
   try {
-    // For demo purposes, return the first user
-    const users = await storage.getUser("123"); // This would come from session
-    if (!users) {
-      const allUsers = Array.from((storage as any).users.values());
-      req.user = allUsers[0] || null;
-    } else {
-      req.user = users;
-    }
-
-    if (!req.user) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.user = decoded;
     next();
-  } catch (error) {
-    console.error("Auth middleware error:", error);
-    res.status(500).json({ message: "Authentication failed" });
+  } catch (err) {
+    return res.status(401).json({ error: 'Invalid token' });
   }
 }
 

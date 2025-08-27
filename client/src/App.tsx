@@ -18,6 +18,10 @@ function Router() {
     <AppLayout>
       <Switch>
         <Route path="/" component={LandingPage} />
+        <Route path="/dashboard" component={Dashboard} />
+        <Route path="/campaigns" component={CampaignsPage} />
+        <Route path="/analytics" component={AnalyticsPage} />
+        <Route path="/automations" component={AutomationsPage} />
         <Route component={NotFound} />
       </Switch>
       <FloatingChat />
